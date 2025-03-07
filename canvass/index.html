@@ -1,3 +1,169 @@
-<html>
-<h1> Hello world
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Free Drawing with Y-Generator Overlay</title>
+  <style>
+    /* Container to hold both canvases */
+    #canvasContainer {
+      position: relative;
+      display: inline-block;
+    }
+    /* Free Drawing Canvas (base layer) */
+    #drawingCanvas {
+      position: relative;
+      z-index: 1;
+      border: 1px solid black;
+    }
+    /* Y-Generator Canvas (overlay) */
+    #yCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      opacity: 0.3; /* Adjust opacity as desired */
+      pointer-events: none; /* Allow mouse events to pass through */
+    }
+    /* Style for the refresh button */
+    #refreshBtn {
+      margin: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Free Drawing with Y-Generator Overlay</h1>
+  <button id="refreshBtn" onclick="location.reload();">Refresh Page</button>
+  
+  <div id="canvasContainer">
+    <!-- Base drawing canvas -->
+    <canvas id="drawingCanvas" width="800" height="500"></canvas>
+    <!-- Y-Generator overlay canvas -->
+    <canvas id="yCanvas" width="800" height="500"></canvas>
+  </div>
+  
+  <script>
+    /* ----- Y-Generator Code (Overlay) ----- */
+    (function() {
+      const yCanvas = document.getElementById("yCanvas");
+      const yCtx = yCanvas.getContext("2d");
+      const center = { x: yCanvas.width / 2, y: yCanvas.height / 2 };
+      const lineLength = 150;
+      
+      // Reserve a minimum gap of 90° each (total 270°), distribute the remaining 90° randomly
+      let extra1 = Math.random() * 90;
+      let extra2 = Math.random() * 90;
+      let sumExtra = extra1 + extra2;
+      if(sumExtra > 90) {
+        const scale = 90 / sumExtra;
+        extra1 *= scale;
+        extra2 *= scale;
+        sumExtra = extra1 + extra2;
+      }
+      const extra3 = 90 - sumExtra;
+      
+      const gap1 = 90 + extra1;
+      const gap2 = 90 + extra2;
+      const gap3 = 90 + extra3; // gap1 + gap2 + gap3 = 360
+      
+      // Choose a random starting angle and compute the other two angles
+      const startAngle = Math.random() * 360;
+      const angles = [
+        startAngle,
+        startAngle + gap1,
+        startAngle + gap1 + gap2
+      ].map(a => a % 360);
+      
+      yCtx.lineWidth = 4;
+      yCtx.strokeStyle = "#333";
+      angles.forEach(angle => {
+        const rad = angle * Math.PI / 180;
+        yCtx.beginPath();
+        yCtx.moveTo(center.x, center.y);
+        yCtx.lineTo(center.x + Math.cos(rad) * lineLength,
+                    center.y + Math.sin(rad) * lineLength);
+        yCtx.stroke();
+      });
+      
+      // Draw the center point
+      yCtx.fillStyle = "red";
+      yCtx.beginPath();
+      yCtx.arc(center.x, center.y, 4, 0, Math.PI * 2);
+      yCtx.fill();
+      
+      console.log("Y-Generator gaps:", gap1.toFixed(2), gap2.toFixed(2), gap3.toFixed(2));
+    })();
+    
+    /* ----- Free Drawing Canvas Code ----- */
+    (function() {
+      const canvas = document.getElementById("drawingCanvas");
+      const ctx = canvas.getContext("2d");
+      let isDrawing = false;
+      let paths = [];       // Stores completed paths for undo functionality
+      let currentPath = []; // Stores the current drawing path
+      
+      canvas.addEventListener("mousedown", () => {
+        isDrawing = true;
+        currentPath = [];
+      });
+      
+      canvas.addEventListener("mouseup", () => {
+        isDrawing = false;
+        if (currentPath.length > 0) {
+          paths.push(currentPath);
+        }
+      });
+      
+      canvas.addEventListener("mousemove", draw);
+      
+      // Undo last path on Ctrl+Z
+      document.addEventListener("keydown", (event) => {
+        if (event.ctrlKey && event.key === "z") {
+          undo();
+        }
+      });
+      
+      function draw(event) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        currentPath.push({ x, y });
+        
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "black";
+        
+        // Clear and redraw all paths
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        redrawPaths();
+        
+        // Draw the current path
+        ctx.beginPath();
+        ctx.moveTo(currentPath[0].x, currentPath[0].y);
+        currentPath.forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.stroke();
+      }
+      
+      function redrawPaths() {
+        paths.forEach(path => {
+          ctx.beginPath();
+          ctx.moveTo(path[0].x, path[0].y);
+          path.forEach(point => ctx.lineTo(point.x, point.y));
+          ctx.stroke();
+        });
+      }
+      
+      function undo() {
+        if (paths.length > 0) {
+          paths.pop();
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          redrawPaths();
+        }
+      }
+    })();
+  </script>
+</body>
 </html>
+
