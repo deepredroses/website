@@ -21,28 +21,27 @@
       width: 100%;
       height: 100%;
     }
-    /* Both canvases fill container */
+    /* Both canvases fill the container */
     #drawingCanvas, #yCanvas {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      border: none;
     }
-    /* Y-Generator Overlay */
+    /* Y-Generator overlay canvas */
     #yCanvas {
       opacity: 0.3;
       pointer-events: none;
     }
-    /* Control UI */
+    /* Controls for line length and refresh */
     #controls {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(255,255,255,0.8);
+      background: rgba(255, 255, 255, 0.8);
       padding: 10px;
       border-radius: 5px;
-      z-index: 2;
+      z-index: 10;
     }
   </style>
 </head>
@@ -53,51 +52,49 @@
     <span id="lineLengthValue">150</span>
     <button onclick="location.reload();">Refresh</button>
   </div>
-  
+
   <div id="canvasContainer">
     <canvas id="drawingCanvas"></canvas>
     <canvas id="yCanvas"></canvas>
   </div>
-  
-  <script>
-    const drawingCanvas = document.getElementById("drawingCanvas");
-    const yCanvas = document.getElementById("yCanvas");
-    const ctx = drawingCanvas.getContext("2d");
-    const yCtx = yCanvas.getContext("2d");
-    const slider = document.getElementById("lineLengthSlider");
-    const sliderValue = document.getElementById("lineLengthValue");
 
-    // Function to resize canvases and scale for high resolution
-    function resizeCanvases() {
-      const dpr = window.devicePixelRatio || 1;
+  <script>
+    // Get elements and contexts
+    const drawingCanvas = document.getElementById('drawingCanvas');
+    const yCanvas = document.getElementById('yCanvas');
+    const ctx = drawingCanvas.getContext('2d');
+    const yCtx = yCanvas.getContext('2d');
+    const slider = document.getElementById('lineLengthSlider');
+    const lineLengthValue = document.getElementById('lineLengthValue');
+    const dpr = window.devicePixelRatio || 1;
+
+    // Setup canvases to fill the viewport with high resolution
+    function setupCanvases() {
       const width = window.innerWidth;
       const height = window.innerHeight;
-      
       [drawingCanvas, yCanvas].forEach(canvas => {
         canvas.width = width * dpr;
         canvas.height = height * dpr;
-        canvas.style.width = width + "px";
-        canvas.style.height = height + "px";
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
       });
-      
-      // Reset transformations before scaling
+      // Reset and scale contexts for crisp drawing
       ctx.resetTransform();
       yCtx.resetTransform();
       ctx.scale(dpr, dpr);
       yCtx.scale(dpr, dpr);
-      
-      // Redraw Y-Generator overlay with the current line length
       drawYGenerator(parseInt(slider.value, 10));
     }
+    setupCanvases();
+    window.addEventListener('resize', setupCanvases);
 
-    // Draw the Y-Generator overlay using a variable line length
+    // Draw Y-Generator overlay using a variable line length
     function drawYGenerator(lineLength) {
       yCtx.clearRect(0, 0, yCanvas.width, yCanvas.height);
-      const center = {
-        x: yCanvas.width / (2 * (window.devicePixelRatio || 1)),
-        y: yCanvas.height / (2 * (window.devicePixelRatio || 1))
-      };
+      // Center based on CSS dimensions
+      const center = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
       
+      // Calculate randomized gaps ensuring a minimum of 90° each
       let extra1 = Math.random() * 90;
       let extra2 = Math.random() * 90;
       let sumExtra = extra1 + extra2;
@@ -108,12 +105,11 @@
         sumExtra = extra1 + extra2;
       }
       const extra3 = 90 - sumExtra;
-      
       const gap1 = 90 + extra1;
       const gap2 = 90 + extra2;
-      const gap3 = 90 + extra3; // gap1 + gap2 + gap3 = 360
+      const gap3 = 90 + extra3; // Total = 360
       
-      // Choose a random starting angle and compute three angles
+      // Use a random start angle and calculate subsequent angles
       const startAngle = Math.random() * 360;
       const angles = [
         startAngle,
@@ -131,45 +127,48 @@
                     center.y + Math.sin(rad) * lineLength);
         yCtx.stroke();
       });
-      
       // Draw the center point
       yCtx.fillStyle = "red";
       yCtx.beginPath();
       yCtx.arc(center.x, center.y, 4, 0, Math.PI * 2);
       yCtx.fill();
-      
-      console.log("Y-Generator gaps:", (90+extra1).toFixed(2), (90+extra2).toFixed(2), (90+extra3).toFixed(2));
     }
+    slider.addEventListener('input', () => {
+      lineLengthValue.textContent = slider.value;
+      drawYGenerator(parseInt(slider.value, 10));
+    });
 
-    // Free drawing feature using pointer events for both mouse and pen
+    // Free drawing using pointer events to support both pen and mouse
     let isDrawing = false;
     let paths = [];
     let currentPath = [];
 
-    drawingCanvas.addEventListener("pointerdown", (event) => {
+    drawingCanvas.addEventListener('pointerdown', (e) => {
       isDrawing = true;
       currentPath = [];
+      drawingCanvas.setPointerCapture(e.pointerId);
     });
 
-    drawingCanvas.addEventListener("pointerup", (event) => {
+    drawingCanvas.addEventListener('pointerup', (e) => {
       isDrawing = false;
       if (currentPath.length > 0) {
         paths.push(currentPath);
       }
+      drawingCanvas.releasePointerCapture(e.pointerId);
     });
 
-    drawingCanvas.addEventListener("pointermove", (event) => {
+    drawingCanvas.addEventListener('pointermove', (e) => {
       if (!isDrawing) return;
       const rect = drawingCanvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
       currentPath.push({ x, y });
       
-      // Clear and redraw all paths
+      // Clear and redraw existing paths
       ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
       redrawPaths();
       
-      // Draw current path
+      // Draw the current path
       if (currentPath.length > 0) {
         ctx.lineWidth = 5;
         ctx.lineCap = "round";
@@ -192,34 +191,15 @@
       });
     }
 
-    document.addEventListener("keydown", (event) => {
-      if (event.ctrlKey && event.key === "z") {
-        undo();
-      }
-    });
-
-    function undo() {
-      if (paths.length > 0) {
+    // Undo last drawing (Ctrl+Z)
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'z') {
         paths.pop();
         ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
         redrawPaths();
       }
-    }
-
-    slider.addEventListener("input", (event) => {
-      const length = event.target.value;
-      sliderValue.textContent = length;
-      drawYGenerator(parseInt(length, 10));
     });
-
-    window.addEventListener('resize', () => {
-      ctx.resetTransform();
-      yCtx.resetTransform();
-      resizeCanvases();
-    });
-
-    // Initial setup
-    resizeCanvases();
   </script>
 </body>
 </html>
+
