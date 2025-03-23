@@ -2,46 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Free Drawing with Y-Generator Overlay</title>
-  <style>
-    /* Container to hold both canvases */
-    #canvasContainer {
-      position: relative;
-      display: inline-block;
-    }
-    /* Base drawing canvas */
-    #drawingCanvas {
-      position: relative;
-      z-index: 1;
-      border: 1px solid black;
-    }
-    /* Y-Generator overlay canvas */
-    #yCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 2;
-      opacity: 0.3; /* Adjust opacity as desired */
-      pointer-events: none; /* Allow mouse events to pass through */
-    }
-    /* Refresh button style */
-    #refreshBtn {
-      margin: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-  </style>
+  <title>Framed Lines</title>
+  <!-- Correctly reference the CSS file -->
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <h1>Free Drawing with Y-Generator Overlay</h1>
-  <button id="refreshBtn" onclick="location.reload();">Refresh Page</button>
-  <div id="canvasContainer">
-    <!-- Base drawing canvas -->
-    <canvas id="drawingCanvas" width="800" height="500"></canvas>
-    <!-- Y-Generator overlay canvas -->
-    <canvas id="yCanvas" width="800" height="500"></canvas>
-  </div>
-  <!-- Load external JavaScript file -->
-  <script src="canvas.js" defer></script>
+  <header>
+    <h1>Welcome to Framed Lines</h1>
+  </header>
+  <main>
+    <p>This is a sample page for framedlines.com. Enjoy the clean layout and smooth functionality.</p>
+  </main>
+  <footer>
+    <p>&copy; 2025 Framed Lines</p>
+  </footer>
+  <!-- Correctly reference the JavaScript file -->
+  <script src="/js/main.js"></script>
 </body>
 </html>
