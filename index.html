@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,11 +30,22 @@
       padding: 10px 20px;
       font-size: 16px;
     }
+    /* Slider container styling */
+    #sliderContainer {
+      margin: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Free Drawing with Y-Generator Overlay</h1>
   <button id="refreshBtn" onclick="location.reload();">Refresh Page</button>
+  
+  <!-- Slider for controlling line length -->
+  <div id="sliderContainer">
+    <label for="lineLengthSlider">Line Length:</label>
+    <input type="range" id="lineLengthSlider" min="50" max="300" value="150">
+    <span id="lineLengthValue">150</span>
+  </div>
   
   <div id="canvasContainer">
     <!-- Base drawing canvas -->
@@ -45,18 +55,20 @@
   </div>
   
   <script>
-    /* ----- Y-Generator Code (Overlay) ----- */
-    (function() {
+    // Function to draw the Y-Generator overlay with a given lineLength
+    function drawYGenerator(lineLength) {
       const yCanvas = document.getElementById("yCanvas");
+      if (!yCanvas) return;
       const yCtx = yCanvas.getContext("2d");
+      // Clear the canvas
+      yCtx.clearRect(0, 0, yCanvas.width, yCanvas.height);
       const center = { x: yCanvas.width / 2, y: yCanvas.height / 2 };
-      const lineLength = 150;
       
       // Reserve a minimum gap of 90° each (total 270°), distribute the remaining 90° randomly
       let extra1 = Math.random() * 90;
       let extra2 = Math.random() * 90;
       let sumExtra = extra1 + extra2;
-      if(sumExtra > 90) {
+      if (sumExtra > 90) {
         const scale = 90 / sumExtra;
         extra1 *= scale;
         extra2 *= scale;
@@ -94,7 +106,21 @@
       yCtx.fill();
       
       console.log("Y-Generator gaps:", gap1.toFixed(2), gap2.toFixed(2), gap3.toFixed(2));
-    })();
+    }
+    
+    // Set up slider to control the line length for the Y-Generator
+    const slider = document.getElementById("lineLengthSlider");
+    const lineLengthValueSpan = document.getElementById("lineLengthValue");
+    let currentLineLength = Number(slider.value);
+    // Initial drawing using the default slider value
+    drawYGenerator(currentLineLength);
+    
+    // Update drawing when slider value changes
+    slider.addEventListener("input", function() {
+      currentLineLength = Number(this.value);
+      lineLengthValueSpan.textContent = this.value;
+      drawYGenerator(currentLineLength);
+    });
     
     /* ----- Free Drawing Canvas Code ----- */
     (function() {
@@ -141,18 +167,22 @@
         redrawPaths();
         
         // Draw the current path
-        ctx.beginPath();
-        ctx.moveTo(currentPath[0].x, currentPath[0].y);
-        currentPath.forEach(point => ctx.lineTo(point.x, point.y));
-        ctx.stroke();
+        if (currentPath.length > 0) {
+          ctx.beginPath();
+          ctx.moveTo(currentPath[0].x, currentPath[0].y);
+          currentPath.forEach(point => ctx.lineTo(point.x, point.y));
+          ctx.stroke();
+        }
       }
       
       function redrawPaths() {
         paths.forEach(path => {
-          ctx.beginPath();
-          ctx.moveTo(path[0].x, path[0].y);
-          path.forEach(point => ctx.lineTo(point.x, point.y));
-          ctx.stroke();
+          if (path.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            path.forEach(point => ctx.lineTo(point.x, point.y));
+            ctx.stroke();
+          }
         });
       }
       
@@ -167,4 +197,3 @@
   </script>
 </body>
 </html>
-
